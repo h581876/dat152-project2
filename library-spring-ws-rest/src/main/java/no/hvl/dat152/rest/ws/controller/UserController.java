@@ -57,19 +57,62 @@ public class UserController {
 		
 	}
 	
-	// TODO - createUser (@Mappings, URI=/users, and method)
 
-	// TODO - updateUser (@Mappings, URI, and method)
+	@PostMapping("/users")
+	public ResponseEntity<User> createUser(@RequestBody User user)  {
+		User newUser = userService.saveUser(user);
+
+		return new ResponseEntity<>(newUser, HttpStatus.CREATED);
+	}
+
+
+	@PutMapping("/users/{id}")
+	public ResponseEntity<Object> updateUser(@PathVariable Long id, @RequestBody User user)throws UserNotFoundException {
+		User updatedUser = userService.updateUser(id, user);
+		return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+	}
+
+
+	@DeleteMapping("/users/{id}")
+	public ResponseEntity<Object> deleteUser(@PathVariable Long id) throws UserNotFoundException {
+		userService.deleteUser(id);
+
+		return new ResponseEntity<>(HttpStatus.OK);
+	}
+
+
+	@GetMapping("/users/{id}/orders")
+	public ResponseEntity<Object> getOrdersForUser(@PathVariable Long id) throws UserNotFoundException {
+		Set<Order> orders = userService.getUserOrders(id);
+
+		return new ResponseEntity<>(orders, HttpStatus.OK);
+	}
 	
-	// TODO - deleteUser (@Mappings, URI, and method)
 
-	// TODO - getUserOrders (@Mappings, URI=/users/{id}/orders, and method)
-	
-	// TODO - getUserOrder (@Mappings, URI=/users/{uid}/orders/{oid}, and method)
+	@GetMapping("/users/{uid}/orders/{oid}")
+	public ResponseEntity<Object> getUserOrder(@PathVariable Long uid, @PathVariable Long oid) throws UserNotFoundException, OrderNotFoundException {
+		Order order = userService.getUserOrder(uid, oid);
 
-	// TODO - deleteUserOrder (@Mappings, URI, and method)
+		return new ResponseEntity<>(order, HttpStatus.OK);
+	}
+
+
+	@DeleteMapping("/users/{uid}/orders/{oid}")
+	public ResponseEntity<Object> deleteUserOrder(@PathVariable Long uid, @PathVariable Long oid) throws UserNotFoundException, OrderNotFoundException {
+		userService.deleteOrderForUser(uid, oid);
+
+		return new ResponseEntity<>(HttpStatus.OK);
+	}
 	
 	// TODO - createUserOrder (@Mappings, URI, and method) + HATEOAS links
+	@PostMapping("/users/{id}/orders")
+	public ResponseEntity<User> createUserOrder(@PathVariable Long id, @RequestBody Order order) throws UserNotFoundException {
+		User user = userService.createOrdersForUser(id, order);
+
+		return new ResponseEntity<>(user, HttpStatus.CREATED);
+	}
+
+
 
 	
 }
