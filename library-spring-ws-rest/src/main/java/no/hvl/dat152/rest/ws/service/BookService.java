@@ -25,37 +25,72 @@ public class BookService {
 
 	@Autowired
 	private BookRepository bookRepository;
-	
-	
+
+
 	public Book saveBook(Book book) {
-		
+
 		return bookRepository.save(book);
-		
+
 	}
-	
+
 	public List<Book> findAll(){
-		
+
 		return (List<Book>) bookRepository.findAll();
-		
+
 	}
-	
-	
+
+
 	public Book findByISBN(String isbn) throws BookNotFoundException {
-		
+
 		Book book = bookRepository.findByIsbn(isbn)
-				.orElseThrow(() -> new BookNotFoundException("Book with isbn = "+isbn+" not found!"));
-		
+				.orElseThrow(() -> new BookNotFoundException(
+						"Book with isbn = " + isbn + " not found!"));
+
 		return book;
 	}
-	
-	// TODO public Book updateBook(Book book, String isbn)
-	
-	// TODO public List<Book> findAllPaginate(Pageable page)
-	
-	// TODO public Set<Author> findAuthorsOfBookByISBN(String isbn)
-	
-	// TODO public void deleteById(long id)
-	
-	// TODO public void deleteByISBN(String isbn) 
-	
+
+	public Book updateBook(Book book)
+			throws BookNotFoundException, UpdateBookFailedException {
+
+		Book existingBook = bookRepository.findByIsbn(book.getIsbn())
+				.orElseThrow(() -> new BookNotFoundException(
+						"Book with isbn = " + book.getIsbn() + " not found!"));
+
+		try {
+			existingBook.setTitle(book.getTitle());
+			existingBook.setAuthors(book.getAuthors());
+
+			return bookRepository.save(existingBook);
+
+		} catch (Exception e) {
+			throw new UpdateBookFailedException(
+					"Could not update book with isbn = " + book.getIsbn());
+		}
+	}
+
+	public List<Book> findAllPaginate(Pageable page) {
+		Page<Book> books = bookRepository.findAll(page);
+		return books.getContent();
+	}
+
+	public Set<Author> findAuthorsOfBookByISBN(String isbn)
+			throws BookNotFoundException {
+
+		Book book = findByISBN(isbn);
+
+		return book.getAuthors();
+	}
+
+	public void deleteById(long id) {
+		bookRepository.deleteById(id);
+	}
+
+	public void deleteByISBN(String isbn) throws BookNotFoundException {
+
+		Book book = bookRepository.findByIsbn(isbn)
+				.orElseThrow(() -> new BookNotFoundException(
+						"Book with isbn = " + isbn + " not found!"));
+
+		bookRepository.delete(book);
+	}
 }
