@@ -15,9 +15,7 @@ import no.hvl.dat152.rest.ws.exceptions.OrderNotFoundException;
 import no.hvl.dat152.rest.ws.model.Order;
 import no.hvl.dat152.rest.ws.repository.OrderRepository;
 
-/**
- * @author tdoy
- */
+
 @Service
 public class OrderService {
 
@@ -38,13 +36,32 @@ public class OrderService {
 		
 		return order;
 	}
+
+
+	public void deleteOrder(Long id) throws OrderNotFoundException {
+		Order order = findOrder(id);
+		orderRepository.deleteById(id);
+	}
 	
-	// TODO public void deleteOrder(Long id)
+
+	public List<Order> findAllOrders() {
+		return orderRepository.findAll();
+	}
 	
-	// TODO public List<Order> findAllOrders()
+
+	public List<Order> findByExpiryDate(LocalDate expiry, Pageable pageable) {
+		return orderRepository.findOrderByExpiry(expiry,
+				pageable.getPageSize(), (int) pageable.getOffset());
+	}
 	
-	// TODO public List<Order> findByExpiryDate(LocalDate expiry, Pageable page)
-	
-	// TODO public Order updateOrder(Order order, Long id)
+
+	public Order updateOrder(Order order, Long id) throws OrderNotFoundException {
+		Order existingOrder = findOrder(id);
+
+		existingOrder.setIsbn(order.getIsbn());
+		existingOrder.setExpiry(order.getExpiry());
+
+		return  orderRepository.save(existingOrder);
+	}
 
 }
