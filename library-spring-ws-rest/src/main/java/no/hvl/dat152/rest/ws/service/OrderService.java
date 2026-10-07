@@ -42,10 +42,11 @@ public class OrderService {
 		Order order = findOrder(id);
 		orderRepository.deleteById(id);
 	}
-	
 
-	public List<Order> findAllOrders() {
-		return orderRepository.findAll();
+
+	public List<Order> findAllOrders(Pageable page) {
+		Page<Order> orders = orderRepository.findAll(page);
+		return orders.getContent();
 	}
 	
 

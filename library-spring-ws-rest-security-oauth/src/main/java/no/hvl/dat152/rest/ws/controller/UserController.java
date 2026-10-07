@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package no.hvl.dat152.rest.ws.controller;
 
@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import no.hvl.dat152.rest.ws.exceptions.OrderNotFoundException;
-import no.hvl.dat152.rest.ws.exceptions.UnauthorizedOrderActionException;
 import no.hvl.dat152.rest.ws.exceptions.UserNotFoundException;
 import no.hvl.dat152.rest.ws.model.Order;
 import no.hvl.dat152.rest.ws.model.User;
@@ -35,6 +34,117 @@ import no.hvl.dat152.rest.ws.service.UserService;
 @RequestMapping("/elibrary/api/v1")
 public class UserController {
 
-	// TODO authority annotation
-	
+    @Autowired
+    private UserService userService;
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping("/users")
+    public ResponseEntity<Object> getUsers(){
+
+        List<User> users = userService.findAllUsers();
+
+        if(users.isEmpty())
+
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        else
+            return new ResponseEntity<>(users, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN') or #id == authentication.details.userid")
+    @GetMapping(value = "/users/{id}")
+    public ResponseEntity<Object> getUser(@PathVariable Long id) throws UserNotFoundException, OrderNotFoundException{
+
+        User user = userService.findUser(id);
+
+        return new ResponseEntity<>(user, HttpStatus.OK);
+
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PostMapping("/users")
+    public ResponseEntity<User> createUser(@RequestBody User user)  {
+        User newUser = userService.saveUser(user);
+
+        return new ResponseEntity<>(newUser, HttpStatus.CREATED);
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN') or #id == authentication.details.userid")
+    @PutMapping("/users/{id}")
+    public ResponseEntity<Object> updateUser(@PathVariable Long id, @RequestBody User user)throws UserNotFoundException {
+        User updatedUser = userService.updateUser(id, user);
+        return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN') or #id == authentication.details.userid")
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<Object> deleteUser(@PathVariable Long id) throws UserNotFoundException {
+        userService.deleteUser(id);
+
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN') or #id == authentication.details.userid")
+    @GetMapping("/users/{id}/orders")
+    public ResponseEntity<Object> getOrdersForUser(@PathVariable Long id) throws UserNotFoundException {
+        Set<Order> orders = userService.getUserOrders(id);
+
+        return new ResponseEntity<>(orders, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN') or #uid == authentication.details.userid")
+    @GetMapping("/users/{uid}/orders/{oid}")
+    public ResponseEntity<Object> getUserOrder(@PathVariable Long uid, @PathVariable Long oid) throws UserNotFoundException, OrderNotFoundException {
+        Order order = userService.getUserOrder(uid, oid);
+
+        return new ResponseEntity<>(order, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN') or #uid == authentication.details.userid")
+    @DeleteMapping("/users/{uid}/orders/{oid}")
+    public ResponseEntity<Object> deleteUserOrder(@PathVariable Long uid, @PathVariable Long oid) throws UserNotFoundException, OrderNotFoundException {
+        userService.deleteOrderForUser(uid, oid);
+
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN') or #id == authentication.details.userid")
+    @PostMapping("/users/{id}/orders")
+    public ResponseEntity<Object> createUserOrder(
+            @PathVariable Long id,
+            @RequestBody Order order) throws UserNotFoundException, OrderNotFoundException {
+
+        userService.createOrdersForUser(id, order);
+
+        Set<Order> orders = userService.getUserOrders(id);
+
+        for (Order o : orders) {
+
+            o.add(
+                    linkTo(
+                            methodOn(OrderController.class)
+                                    .getBorrowOrder(o.getId())
+                    ).withSelfRel()
+            );
+
+            o.add(
+                    linkTo(
+                            methodOn(OrderController.class)
+                                    .deleteBookOrder(o.getId())
+                    ).withRel("cancel")
+            );
+
+            o.add(
+                    linkTo(
+                            methodOn(OrderController.class)
+                                    .updateOrder(o.getId(), o)
+                    ).withRel("update")
+            );
+        }
+
+        return new ResponseEntity<>(orders, HttpStatus.CREATED);
+    }
+
+
+
+
 }

@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package no.hvl.dat152.rest.ws.service;
 
@@ -23,13 +23,74 @@ import no.hvl.dat152.rest.ws.repository.BookRepository;
 @Service
 public class BookService {
 
-	// TODO copy your solutions from previous tasks!
-	
+	@Autowired
+	private BookRepository bookRepository;
+
+
 	public Book saveBook(Book book) {
-		
-		// TODO
-		
-		return null;
-		
+
+		return bookRepository.save(book);
+
+	}
+
+	public List<Book> findAll(){
+
+		return (List<Book>) bookRepository.findAll();
+
+	}
+
+
+	public Book findByISBN(String isbn) throws BookNotFoundException {
+
+		Book book = bookRepository.findByIsbn(isbn)
+				.orElseThrow(() -> new BookNotFoundException(
+						"Book with isbn = " + isbn + " not found!"));
+
+		return book;
+	}
+
+	public Book updateBook(Book book)
+			throws BookNotFoundException, UpdateBookFailedException {
+
+		Book existingBook = bookRepository.findByIsbn(book.getIsbn())
+				.orElseThrow(() -> new BookNotFoundException(
+						"Book with isbn = " + book.getIsbn() + " not found!"));
+
+		try {
+			existingBook.setTitle(book.getTitle());
+			existingBook.setAuthors(book.getAuthors());
+
+			return bookRepository.save(existingBook);
+
+		} catch (Exception e) {
+			throw new UpdateBookFailedException(
+					"Could not update book with isbn = " + book.getIsbn());
+		}
+	}
+
+	public List<Book> findAllPaginate(Pageable page) {
+		Page<Book> books = bookRepository.findAll(page);
+		return books.getContent();
+	}
+
+	public Set<Author> findAuthorsOfBookByISBN(String isbn)
+			throws BookNotFoundException {
+
+		Book book = findByISBN(isbn);
+
+		return book.getAuthors();
+	}
+
+	public void deleteById(long id) {
+		bookRepository.deleteById(id);
+	}
+
+	public void deleteByISBN(String isbn) throws BookNotFoundException {
+
+		Book book = bookRepository.findByIsbn(isbn)
+				.orElseThrow(() -> new BookNotFoundException(
+						"Book with isbn = " + isbn + " not found!"));
+
+		bookRepository.delete(book);
 	}
 }
